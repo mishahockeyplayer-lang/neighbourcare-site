@@ -10,7 +10,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Premium Home Cleaning in Toronto | NeighbourCare" />
 <meta property="og:description" content="Reliable, transparent home cleaning in Toronto. Build your plan in minutes." />
-<meta property="og:image" content="https://neighbour.care/assets/hero-condo-CGnmyl_f.jpg" />
+<meta property="og:image" content="https://neighbour.care/hero.jpg" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://connect.facebook.net" />
 <link rel="preconnect" href="https://neighbour.care" crossorigin />
@@ -99,7 +99,7 @@ fbq('track', 'PageView');
   .nav-cta .signin:hover{color:var(--ink)}
   .menu-toggle{display:none;background:none;border:1px solid var(--line);border-radius:10px;padding:.5rem .6rem;cursor:pointer}
 
-  section{padding:clamp(64px,9vw,120px) 0}
+  section{padding:clamp(80px,9vw,128px) 0}
   .section-head{max-width:62ch}
   .section-head h2{margin-top:.8rem}
   .section-head p{margin-top:1.1rem}
@@ -154,7 +154,7 @@ fbq('track', 'PageView');
   .atmo-list{margin-top:28px;display:grid;gap:2px}
   .atmo-list .row{display:flex;gap:16px;align-items:baseline;padding:16px 0;border-top:1px solid var(--line)}
   .atmo-list .num{font-family:var(--serif);color:var(--accent);font-size:.95rem;min-width:24px}
-  .collage{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:14px}
+  .collage{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:14px;height:520px}
   .collage figure{margin:0;position:relative;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
   .collage figure img{width:100%;height:100%;object-fit:cover}
   .collage .tall{grid-row:span 2}
@@ -272,7 +272,7 @@ fbq('track', 'PageView');
 
   /* about */
   .founder{display:grid;grid-template-columns:.85fr 1.15fr;gap:48px;align-items:center}
-  .founder img{border-radius:var(--radius);box-shadow:var(--shadow);width:100%;object-fit:cover}
+  .founder img{border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-height:560px;object-fit:cover}
   .pullquote{font-family:var(--serif);font-style:italic;font-size:clamp(1.3rem,2.4vw,1.8rem);
     border-left:3px solid var(--accent);padding-left:24px;margin:32px 0;color:var(--ink)}
 
@@ -381,6 +381,8 @@ fbq('track', 'PageView');
     .menu-toggle{display:block}
     .features,.rooms,.upgrades,.portal-grid,.field-2{grid-template-columns:1fr}
     .review-head{align-items:flex-start}
+    .collage{height:420px}
+    .founder img{max-height:400px}
     .nav-links.open{display:flex;position:absolute;top:72px;left:0;right:0;flex-direction:column;
       background:var(--bg);padding:18px 24px;border-bottom:1px solid var(--line);gap:1rem}
   }
@@ -450,11 +452,11 @@ src="https://www.facebook.com/tr?id=2135086974037527&ev=PageView&noscript=1"
 <script>
 /* ---------- assets (from the live site) ---------- */
 const IMG = {
-  hero:"https://neighbour.care/assets/hero-condo-CGnmyl_f.jpg",
-  bathroom:"https://neighbour.care/assets/section-bathroom-D5G8Fjc_.jpg",
-  bedroom:"https://neighbour.care/assets/section-bedroom-B_aVtK_Q.jpg",
-  kitchen:"https://neighbour.care/assets/section-kitchen-dark-DfnCQH7a.jpg",
-  founder:"https://neighbour.care/assets/owen-feltham-muiCQOBu.png"
+  hero:"hero.jpg",
+  bathroom:"bathroom.jpg",
+  bedroom:"bedroom.jpg",
+  kitchen:"kitchen.jpg",
+  founder:"owen.jpg"
 };
 
 /* ---------- pricing data ---------- */
