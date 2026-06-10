@@ -28,6 +28,44 @@ fbq('init', '2135086974037527');
 fbq('track', 'PageView');
 </script>
 <!-- End Meta Pixel Code -->
+<!-- ============================================================
+     GOOGLE ADS TAG (gtag.js) — НАСТРОЙКА В ОДНОМ МЕСТЕ
+     1) Создай аккаунт Google Ads → Goals → Conversions →
+        создай 3 conversion actions (Booking Confirmed, Contact Lead,
+        Phone Click) — инструкция: 05-google-ads-setup-from-zero.md
+     2) Вставь ниже свой Conversion ID (формат AW-XXXXXXXXXX — он один
+        на аккаунт) и три Label (у каждой конверсии свой).
+     3) Пока ID не вставлен — тег НЕ грузится и сайт работает как обычно.
+     ============================================================ -->
+<script>
+  window.GADS = {
+    id: "AW-XXXXXXXXXX",                 /* TODO: твой Conversion ID */
+    labels: {
+      booking: "LABEL_BOOKING",          /* TODO: label конверсии Booking Confirmed */
+      lead:    "LABEL_LEAD",             /* TODO: label конверсии Contact Lead */
+      phone:   "LABEL_PHONE"             /* TODO: label конверсии Phone Click */
+    }
+  };
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  (function(){
+    if(/XXXX/.test(GADS.id)) return;     /* демо-режим: ID ещё не вставлен */
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=" + GADS.id;
+    document.head.appendChild(s);
+    gtag("js", new Date());
+    gtag("config", GADS.id, { allow_enhanced_conversions: true });
+  })();
+  /* Хелпер: gconv('booking'|'lead'|'phone', {value, currency, ...}) */
+  window.gconv = function(label, params){
+    if(/XXXX/.test(GADS.id)) return;
+    var l = GADS.labels[label];
+    if(!l || /^LABEL_/.test(l)) return;  /* label не настроен — молча пропускаем */
+    gtag("event", "conversion", Object.assign({ send_to: GADS.id + "/" + l }, params || {}));
+  };
+</script>
+<!-- End Google Ads Tag -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1391,6 +1429,9 @@ function observeReveal(){
 
 /* ---------- interactions (event delegation) ---------- */
 document.addEventListener("click", async (e)=>{
+  /* Google Ads: клик по любому номеру телефона = конверсия Phone Click */
+  const telLink = e.target.closest && e.target.closest('a[href^="tel:"]');
+  if(telLink){ gconv('phone'); if(window.fbq) fbq('track','Contact'); }
   const t=e.target.closest("[data-action]");
   if(t){
     const a=t.dataset.action, id=t.dataset.id;
@@ -1425,6 +1466,9 @@ document.addEventListener("click", async (e)=>{
         message:`Cleaning type: ${c.type.name}\nWhen: ${state.slotDay||"-"} ${state.slotTime||""}\nRooms: ${rooms}\nUpgrades: ${upg}\nEstimated total (incl. HST): ${c.type.custom?"Custom quote":money(c.total)}\n\nEmail marketing consent: ${d.emailOptIn?"YES":"No"}\nSMS marketing consent: ${d.smsOptIn?"YES":"No"}`
       });
       if(window.fbq) fbq('track','Schedule',{value:c.type.custom?0:c.total,currency:'CAD'});
+      /* Google Ads: главная конверсия — подтверждённая бронь (+enhanced conversions) */
+      gtag('set','user_data',{ email:(d.email||'').trim(), phone_number:(d.phone||'').trim() });
+      gconv('booking',{ value:c.type.custom?0:c.total, currency:'CAD', transaction_id:'bk-'+Date.now() });
       state.bookingStep=5; render();
     }
     if(a==="contact-submit"){
@@ -1432,6 +1476,7 @@ document.addEventListener("click", async (e)=>{
       const g=id=>(document.getElementById(id)||{}).value||"";
       const ok=await sendForm({subject:"New contact message — NeighbourCare", name:g("cName"), email:g("cEmail"), message:g("cMsg")}, "contactMsg");
       if(ok && window.fbq) fbq('track','Lead');
+      if(ok) gconv('lead',{ value:50, currency:'CAD' });  /* Google Ads: лид с формы */
       t.disabled=false;
     }
     if(a==="auth-oauth"){ oauthSignIn(id); if(window.fbq) fbq('track','Lead',{content_name:'signup_'+id}); }
