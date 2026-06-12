@@ -93,12 +93,16 @@ fbq('track', 'PageView');
     --maxw:1200px;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
+  html{scroll-behavior:smooth;overflow-x:clip;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{
     margin:0;font-family:var(--sans);background:var(--bg);color:var(--ink);
     -webkit-font-smoothing:antialiased;line-height:1.55;font-size:16px;
     background-image:radial-gradient(1200px 600px at 80% -10%, #e8f1fe 0%, rgba(232,241,254,0) 60%);
+    overflow-x:clip;width:100%;max-width:100%;overflow-wrap:break-word;
   }
+  /* belt-and-braces: nothing may push the page wider than the screen */
+  *{min-width:0}
+  img,video,svg,iframe{max-width:100%;height:auto}
   a{color:inherit;text-decoration:none}
   img{display:block;max-width:100%}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
@@ -113,6 +117,7 @@ fbq('track', 'PageView');
   .muted{color:var(--muted)}
 
   /* buttons */
+  a,button,.btn,.type-opt,.upg,.room,.slot,.acc-q,.menu-toggle,.stepper button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   .btn{display:inline-flex;align-items:center;gap:.5rem;border-radius:999px;padding:.85rem 1.5rem;
     font-weight:600;font-size:.94rem;cursor:pointer;border:1px solid transparent;transition:.25s ease;white-space:nowrap}
   .btn-primary{background:var(--dark);color:#eaf2fd}
@@ -430,8 +435,37 @@ fbq('track', 'PageView');
     body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
     .stepper button{width:38px;height:38px;font-size:1.2rem}
     .builder{gap:20px}
-    .hero{min-height:88vh}
+    .hero{min-height:auto;padding:24px 0}
+    .hero .wrap{padding-top:48px;padding-bottom:48px;gap:32px}
     .ty-btns .btn,.hero-cta .btn{flex:1;justify-content:center}
+    section{padding:clamp(56px,11vw,80px) 0}
+    .quote{padding:26px 22px}
+    .builder-step{padding:20px 18px}
+    .standard{border-radius:20px}
+    .standard .inner{gap:32px}
+    .stats{gap:18px}
+    .stat .n{font-size:2.2rem}
+    .atmo{gap:36px}
+  }
+  /* narrow phones */
+  @media (max-width:520px){
+    .wrap{padding:0 18px}
+    h1{font-size:clamp(2.2rem,9vw,3rem)}
+    .hero p{font-size:1rem}
+    .hero-feats{gap:1rem;font-size:.82rem}
+    .collage{height:340px;gap:10px}
+    .collage figcaption .v{font-size:.95rem}
+    .quote q{font-size:1.2rem}
+    .quote{padding:22px 18px}
+    .summary{padding:22px 20px}
+    .summary .s-total{font-size:2.4rem}
+    .foot{flex-direction:column;text-align:center;justify-content:center}
+    .foot-links{justify-content:center}
+    .cta-band .btns .btn{flex:1;justify-content:center;min-width:46%}
+    .btn{padding:.8rem 1.2rem}
+    .mobile-cta .btn{font-size:.86rem;padding:.75rem .6rem}
+    .marquee-track{font-size:.74rem;gap:2rem}
+    .marquee-track span{gap:2rem}
   }
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
@@ -542,8 +576,11 @@ const state = {
   bookingStep:1,
   slotDay:null,
   slotTime:null,
+  condition:"Normal",
   details:{name:"",phone:"",email:"",address:"",emailOptIn:false,smsOptIn:false}
 };
+/* House condition — tells the team what to expect on arrival */
+const CONDITIONS = ["Normal","Tiny","Moderate","Messy","Dirty"];
 
 const money = n => "$"+n.toFixed(2);
 
@@ -567,7 +604,7 @@ const MSG_SUBMIT = "Please select at least $100 in cleaning services or upgrades
       mail (e.g. neighbour@care.com) and verify it.
    2. Paste the access key you get below. That's it — forms email that inbox. */
 const FORMS_KEY = "6fe31219-8eb8-4fc3-9671-7d7f9d382978";   // Web3Forms public access key
-const FORM_TO   = "mpqvsa@gmail.com";          // inbox that receives submissions
+const FORM_TO   = "service@neighbourcare.com";   // inbox that receives submissions (set the real recipient in the Web3Forms dashboard too)
 
 /* --- AUTH (Supabase: Google, Apple, Facebook, email) ---------------------
    1. Create a free project at https://supabase.com → Project Settings → API.
@@ -577,6 +614,22 @@ const FORM_TO   = "mpqvsa@gmail.com";          // inbox that receives submission
       provider's console — Supabase shows the exact redirect URL to use).
    4. Add your live site URL under Authentication → URL Configuration. */
 const AUTH = { url:"https://bbxjgxctvlhvlwebsvwe.supabase.co", anon:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJieGpneGN0dmxodmx3ZWJzdndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MzU0NzksImV4cCI6MjA5NjUxMTQ3OX0.EpljYS8rN_ym8Ab1q0uhaXyrR_Lat1GOe45k4GRP0Zw" };
+
+/* --- STRIPE (optional online payment) -----------------------------------
+   Static sites can't compute a dynamic Stripe charge without a server, so
+   the simplest reliable option is a Stripe Payment Link (e.g. a $50 deposit):
+   1. Client logs into dashboard.stripe.com → Payment Links → New.
+   2. Create a link (fixed price, e.g. $50 deposit, or "customer chooses amount").
+   3. Paste the link URL below. A "Pay / reserve" button then appears on the
+      confirmation screen. Leave empty to hide the button. */
+const STRIPE_LINK = "";   // e.g. "https://buy.stripe.com/xxxxxxxx"
+
+/* --- GoHighLevel CRM (optional) ------------------------------------------
+   Paste your GHL Inbound Webhook URL below and every booking + contact is
+   sent straight into your CRM as a lead. Leave empty to turn it off.
+   Get the URL: GHL sub-account → Automation → Workflows → New →
+   trigger "Inbound Webhook" → copy URL → Publish. */
+const GHL_WEBHOOK = "";   // e.g. "https://services.leadconnectorhq.com/hooks/xxxx/webhook-trigger/xxxx"
 
 const FORMS_READY = FORMS_KEY && !FORMS_KEY.startsWith("YOUR_");
 const AUTH_READY  = AUTH.url && AUTH.anon && !AUTH.url.startsWith("YOUR_");
@@ -609,6 +662,16 @@ async function sendForm(payload, feedbackId){
     if(feedbackId) showFeedback(feedbackId,"Network error. Please call us at 289-301-0703.","error");
     return false;
   }
+}
+
+/* ---- CRM: send every lead to GoHighLevel via Inbound Webhook ----
+   Non-blocking: if it fails, the email/booking still goes through.
+   no-cors lets a static site post to the webhook without CORS errors. */
+function sendToGHL(lead){
+  if(!GHL_WEBHOOK || !/^https?:\/\//.test(GHL_WEBHOOK)) return;
+  try{
+    fetch(GHL_WEBHOOK, { method:"POST", mode:"no-cors", body: JSON.stringify(lead) }).catch(function(){});
+  }catch(e){}
 }
 
 /* ---- Supabase auth ---- */
@@ -803,9 +866,9 @@ function pageHome(){
     <div class="hero-bg"><img src="${IMG.hero}" alt="Sunlit luxury Toronto condo with marble kitchen island" fetchpriority="high" decoding="async"></div>
     <div class="wrap">
       <div>
-        <span class="hero-badge"><span class="dot"></span> Now booking across Toronto</span>
+        <span class="hero-badge"><span class="dot"></span> Now booking across North York &amp; the GTA</span>
         <h1>A cleaner home,<br><em>quietly taken care of.</em></h1>
-        <p>NeighbourCare is a premium residential cleaning service for Toronto homes that prefer calm, consistency, and a higher standard. Configure your visit in minutes — no calls, no surprises.</p>
+        <p>NeighbourCare is a premium residential cleaning service for North York &amp; GTA homes that prefer calm, consistency, and a higher standard. Configure your visit in minutes — no calls, no surprises.</p>
         <div class="hero-cta">
           <a href="#/booking" class="btn btn-light">Build your cleaning plan</a>
           <button type="button" class="btn btn-ghost scrollto" data-action="scrollto" data-id="pricing" style="color:#eaf2fd;border-color:rgba(255,255,255,.3)">See pricing</button>
@@ -928,7 +991,7 @@ function pageHome(){
     <div class="review-head">
       <div class="section-head">
         <span class="eyebrow">Reviews</span>
-        <h2>Trusted by neighbours across Toronto.</h2>
+        <h2>Trusted by neighbours across North York.</h2>
         <p class="muted" style="margin-top:10px">Reviews originally collected from our Google Business profile.</p>
       </div>
       <div style="text-align:right"><div class="stars">★★★★★</div><div class="muted" style="font-size:.9rem">4.9 / 5 · 200+ reviews</div></div>
@@ -982,7 +1045,7 @@ function pageRegular(){
   <section class="wrap page-head reveal">
     <span class="eyebrow">Regular cleaning</span>
     <h1>Built for the way you actually live.</h1>
-    <p class="lead">Recurring maintenance cleans for Toronto homes. Same team, same checklist, same standard — every visit.</p>
+    <p class="lead">Recurring maintenance cleans for North York &amp; GTA homes. Same team, same checklist, same standard — every visit.</p>
     <div style="margin-top:28px"><a href="#/booking" class="btn btn-primary">Build your plan</a></div>
   </section>
 
@@ -1123,7 +1186,7 @@ function pageContact(){
       <div class="reveal">
         <div class="contact-box"><div class="k">Email</div><a class="v" href="mailto:hello@neighbourcare.ca">hello@neighbourcare.ca</a></div>
         <div class="contact-box"><div class="k">Phone</div><a class="v" href="tel:+12893010703">289-301-0703</a></div>
-        <div class="contact-box"><div class="k">Service area</div><div class="v">Toronto &amp; GTA</div></div>
+        <div class="contact-box"><div class="k">Service area</div><div class="v">North York &amp; the GTA</div></div>
         <div style="margin-top:18px"><span class="eyebrow">Ready to book?</span><div style="margin-top:12px"><a href="#/booking" class="btn btn-primary">Build your plan</a></div></div>
       </div>
       <div class="auth-card reveal">
@@ -1322,7 +1385,8 @@ function bookingBody(){
     return `<h2 style="font-size:1.9rem;margin-bottom:6px">Build your plan.</h2>
       <p class="muted" style="margin-bottom:14px">Pick your cleaning type and the exact rooms you need. The total updates live.</p>
       <span class="home-min-note" style="margin-bottom:18px">◆ <b>Minimum order value: $150</b> — including a mandatory $50 service fee.</span>
-      ${builderHTML()}`;
+      ${builderHTML()}
+      ${conditionHTML()}`;
   }
   if(state.bookingStep===3){
     const days=bookingDays();
@@ -1343,6 +1407,7 @@ function bookingBody(){
     <p class="muted" style="margin-bottom:22px">Review everything below. Your card won't be charged until the visit is completed.</p>
     <div class="builder-step">
       <div class="confirm-line"><span class="k">Cleaning type</span><span>${c.type.name}</span></div>
+      <div class="confirm-line"><span class="k">House condition</span><span>${state.condition}</span></div>
       <div class="confirm-line"><span class="k">Date & time</span><span>${state.slotDay||"—"} · ${state.slotTime||"—"}</span></div>
       <div class="confirm-line"><span class="k">Rooms</span><span style="max-width:60%;text-align:right">${roomLines}</span></div>
       <div class="confirm-line"><span class="k">Upgrades</span><span style="max-width:60%;text-align:right">${upgLines}</span></div>
@@ -1352,6 +1417,15 @@ function bookingBody(){
     <button type="button" class="btn btn-primary btn-block" data-action="confirm-booking">Confirm booking</button>`;
 }
 
+function conditionHTML(){
+  return `<div class="builder-step">
+      <div class="stepnum"><b>5</b><h3>House condition</h3></div>
+      <p class="muted" style="margin:-6px 0 14px;font-size:.88rem">Helps our team plan the right time and supplies. Doesn't change your price.</p>
+      <div class="timegrid">
+        ${CONDITIONS.map(cn=>`<div class="slot ${state.condition===cn?'sel':''}" data-action="condition" data-id="${cn}">${cn}</div>`).join("")}
+      </div>
+    </div>`;
+}
 function bookingThankYou(){
   const c = compute();
   return `<div class="thankyou reveal">
@@ -1360,7 +1434,8 @@ function bookingThankYou(){
     <p class="lead">We've received your booking details${state.slotDay?` for <b>${state.slotDay}${state.slotTime?` · ${state.slotTime}`:""}</b>`:""}. A NeighbourCare coordinator will confirm your visit shortly. Your card won't be charged until the visit is completed.</p>
     <p class="muted" style="margin-top:14px">Estimated total: <b style="color:var(--ink)">${c.type.custom?"Custom quote":money(c.total)}</b> · incl. HST</p>
     <div class="ty-btns">
-      <a href="tel:+12893010703" class="btn btn-primary">☎ Call Now · 289-301-0703</a>
+      ${STRIPE_LINK ? `<a href="${STRIPE_LINK}" target="_blank" rel="noopener" class="btn btn-primary">Pay &amp; reserve online</a>` : ``}
+      <a href="tel:+12893010703" class="btn ${STRIPE_LINK?'btn-ghost':'btn-primary'}">☎ Call Now · 289-301-0703</a>
       <a href="#/" class="btn btn-ghost">Back to home</a>
     </div>
     <p class="muted" style="margin-top:20px;font-size:.85rem">Prefer to talk it through? Call us at <a href="tel:+12893010703" style="color:var(--accent-deep);font-weight:600">289-301-0703</a>.</p>
@@ -1443,6 +1518,7 @@ document.addEventListener("click", async (e)=>{
       const open=item.classList.toggle("open"); ans.style.maxHeight=open?ans.scrollHeight+"px":"0"; }
     if(a==="day"){ state.slotDay=id; document.querySelectorAll('[data-action="day"]').forEach(o=>o.classList.toggle("sel",o.dataset.id===id)); }
     if(a==="time"){ state.slotTime=id; document.querySelectorAll('[data-action="time"]').forEach(o=>o.classList.toggle("sel",o.dataset.id===id)); }
+    if(a==="condition"){ state.condition=id; document.querySelectorAll('[data-action="condition"]').forEach(o=>o.classList.toggle("sel",o.dataset.id===id)); }
     if(a==="scrollto"){ e.preventDefault(); const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }
     if(a==="to-booking"){ if(!meetsMin(compute())){ e.preventDefault(); updateMinUI(true); scrollToWarn(); }
       else if(window.fbq) fbq('track','InitiateCheckout'); }
@@ -1463,9 +1539,15 @@ document.addEventListener("click", async (e)=>{
       await sendForm({
         subject:"New booking request — NeighbourCare",
         name:d.name, email:d.email, phone:d.phone, address:d.address,
-        message:`Cleaning type: ${c.type.name}\nWhen: ${state.slotDay||"-"} ${state.slotTime||""}\nRooms: ${rooms}\nUpgrades: ${upg}\nEstimated total (incl. HST): ${c.type.custom?"Custom quote":money(c.total)}\n\nEmail marketing consent: ${d.emailOptIn?"YES":"No"}\nSMS marketing consent: ${d.smsOptIn?"YES":"No"}`
+        message:`Cleaning type: ${c.type.name}\nHouse condition: ${state.condition}\nWhen: ${state.slotDay||"-"} ${state.slotTime||""}\nRooms: ${rooms}\nUpgrades: ${upg}\nEstimated total (incl. HST): ${c.type.custom?"Custom quote":money(c.total)}\n\nEmail marketing consent: ${d.emailOptIn?"YES":"No"}\nSMS marketing consent: ${d.smsOptIn?"YES":"No"}`
       });
       if(window.fbq) fbq('track','Schedule',{value:c.type.custom?0:c.total,currency:'CAD'});
+      sendToGHL({ source:"booking", name:d.name, email:d.email, phone:d.phone, address:d.address,
+        service_type:c.type.name, condition:state.condition,
+        visit_when:((state.slotDay||"")+" "+(state.slotTime||"")).trim(),
+        rooms:rooms, upgrades:upg, total:(c.type.custom?"Custom quote":money(c.total)),
+        email_optin:!!d.emailOptIn, sms_optin:!!d.smsOptIn,
+        notes:`Booking — ${c.type.name}, condition: ${state.condition}, when: ${(state.slotDay||"-")+" "+(state.slotTime||"")}, rooms: ${rooms}, upgrades: ${upg}, total: ${c.type.custom?"Custom quote":money(c.total)}. Email consent: ${d.emailOptIn?"YES":"No"}, SMS consent: ${d.smsOptIn?"YES":"No"}.` });
       /* Google Ads: главная конверсия — подтверждённая бронь (+enhanced conversions) */
       gtag('set','user_data',{ email:(d.email||'').trim(), phone_number:(d.phone||'').trim() });
       gconv('booking',{ value:c.type.custom?0:c.total, currency:'CAD', transaction_id:'bk-'+Date.now() });
@@ -1475,6 +1557,7 @@ document.addEventListener("click", async (e)=>{
       t.disabled=true;
       const g=id=>(document.getElementById(id)||{}).value||"";
       const ok=await sendForm({subject:"New contact message — NeighbourCare", name:g("cName"), email:g("cEmail"), message:g("cMsg")}, "contactMsg");
+      sendToGHL({ source:"contact", name:g("cName"), email:g("cEmail"), message:g("cMsg"), notes:"Contact form: "+g("cMsg") });
       if(ok && window.fbq) fbq('track','Lead');
       if(ok) gconv('lead',{ value:50, currency:'CAD' });  /* Google Ads: лид с формы */
       t.disabled=false;
