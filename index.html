@@ -1187,7 +1187,7 @@ function pageContact(){
   <section class="wrap page-head reveal">
     <span class="eyebrow">Get in touch</span>
     <h1>We answer messages quickly.</h1>
-    <p class="lead">For most things, building a plan is faster than emailing. But if you have a question, we're here.</p>
+    <p class="lead">Send us a message and we'll get back to you fast — or build your plan for an instant estimate.</p>
   </section>
   <section class="wrap">
     <div class="contact-grid">
@@ -1197,9 +1197,11 @@ function pageContact(){
         <div class="contact-box"><div class="k">Service area</div><div class="v">North York &amp; the GTA</div></div>
         <div style="margin-top:18px"><span class="eyebrow">Ready to book?</span><div style="margin-top:12px"><a href="#/booking" class="btn btn-primary">Build your plan</a></div></div>
       </div>
-      ${GHL_FORM_URL ? `<div class="auth-card reveal" style="padding:12px">
+      ${GHL_FORM_URL ? `<div class="auth-card reveal" style="padding:22px 18px 14px">
+        <span class="eyebrow">Send us a message</span>
+        <p class="muted" style="margin:8px 0 16px;font-size:.92rem">We typically reply within 15–20 minutes during business hours.</p>
         <iframe src="${GHL_FORM_URL}" title="Request your clean" loading="lazy"
-          style="width:100%;min-height:720px;border:none;border-radius:12px;background:#fff;display:block"></iframe>
+          style="width:100%;min-height:680px;border:none;border-radius:12px;background:#fff;display:block"></iframe>
       </div>` : `<div class="auth-card reveal">
         <span class="eyebrow">Send a note</span>
         <p class="muted" style="margin:8px 0 20px">We typically reply within an hour during business hours.</p>
@@ -1361,7 +1363,7 @@ function pagePolicies(){
 }
 
 /* ---------- booking flow ---------- */
-const STEP_LABELS=["Build your plan","Pick a time","Confirm"];
+const STEP_LABELS=["Your details","Build your plan","Pick a time","Confirm"];
 function bookingProgress(){
   return `<div class="progress">${STEP_LABELS.map((l,i)=>{
     const n=i+1; const cls = n<state.bookingStep?"done":(n===state.bookingStep?"cur":"");
@@ -1377,13 +1379,23 @@ const TIMES=["8:00 AM","9:00 AM","10:30 AM","12:00 PM","1:30 PM","3:00 PM"];
 
 function bookingBody(){
   if(state.bookingStep===1){
+    return `<h2 style="font-size:1.9rem;margin-bottom:6px">Your details.</h2>
+      <p class="muted" style="margin-bottom:18px">Tell us how to reach you, then continue to build your plan.</p>
+      ${GHL_FORM_URL ? `<div class="builder-step" style="padding:12px">
+        <iframe src="${GHL_FORM_URL}" title="Your details" loading="lazy"
+          style="width:100%;min-height:660px;border:none;border-radius:12px;background:#fff;display:block"></iframe>
+      </div>
+      <p class="muted" style="margin-top:12px;font-size:.86rem">Fill in the form above, then press Continue to choose your clean.</p>`
+      : `<div class="builder-step"><p class="muted">Continue to build your plan — we'll confirm the details with you.</p></div>`}`;
+  }
+  if(state.bookingStep===2){
     return `<h2 style="font-size:1.9rem;margin-bottom:6px">Build your plan.</h2>
       <p class="muted" style="margin-bottom:14px">Pick your cleaning type and the exact rooms you need. The total updates live.</p>
       <span class="home-min-note" style="margin-bottom:18px">◆ <b>Minimum order value: $150</b> — including a mandatory $50 service fee.</span>
       ${builderHTML()}
       ${conditionHTML()}`;
   }
-  if(state.bookingStep===2){
+  if(state.bookingStep===3){
     const days=bookingDays();
     return `<h2 style="font-size:1.9rem;margin-bottom:6px">Pick a time.</h2>
       <p class="muted" style="margin-bottom:22px">Choose the day and arrival window that works for you.</p>
@@ -1394,11 +1406,13 @@ function bookingBody(){
         <div class="timegrid">${TIMES.map(t=>`<div class="slot ${state.slotTime===t?'sel':''}" data-action="time" data-id="${t}">${t}</div>`).join("")}</div>
       </div>`;
   }
-  // step 3 — confirm (review) + GHL form for contact capture
+  // step 4 — review your request
   const c=compute();
   const roomLines=ROOMS.filter(r=>state.rooms[r.id]>0).map(r=>`${state.rooms[r.id]}× ${r.name}`).join(", ")||"None";
   const upgLines=UPGRADES.filter(u=>state.upgrades[u.id]).map(u=>u.name).join(", ")||"None";
-  const review = `<div class="builder-step">
+  return `<h2 style="font-size:1.9rem;margin-bottom:6px">Review your request.</h2>
+    <p class="muted" style="margin-bottom:22px">Check everything below, then send your request. Your card won't be charged until the visit is completed.</p>
+    <div class="builder-step">
       <div class="confirm-line"><span class="k">Cleaning type</span><span>${c.type.name}</span></div>
       <div class="confirm-line"><span class="k">House condition</span><span>${state.condition}</span></div>
       <div class="confirm-line"><span class="k">Date & time</span><span>${state.slotDay||"—"} · ${state.slotTime||"—"}</span></div>
@@ -1406,34 +1420,8 @@ function bookingBody(){
       <div class="confirm-line"><span class="k">Upgrades</span><span style="max-width:60%;text-align:right">${upgLines}</span></div>
       <div class="confirm-line"><span class="k">Estimated time</span><span>~${c.mins} min on-site</span></div>
       <div class="confirm-line" style="border:none;font-weight:600"><span class="k" style="color:var(--ink)">Total (incl. HST)</span><span>${c.type.custom?"Custom quote":money(c.total)}</span></div>
-    </div>`;
-  if(GHL_FORM_URL || true){
-    return `<h2 style="font-size:1.9rem;margin-bottom:6px">Confirm your booking.</h2>
-    <p class="muted" style="margin-bottom:22px">Here's your estimate. Your card won't be charged until the visit is completed.</p>
-    ${review}
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
-      <a href="#/contact" class="btn btn-primary" style="flex:1;justify-content:center;min-width:200px">Request this clean →</a>
-      <a href="tel:+12893010703" class="btn btn-ghost" style="flex:1;justify-content:center;min-width:200px">☎ Call 289-301-0703</a>
     </div>
-    <p class="muted" style="margin-top:14px;font-size:.86rem">Tap "Request this clean" to send your details and we'll confirm your visit.</p>`;
-  }
-  // fallback (no GHL form set): collect details here and email the booking
-  return `<h2 style="font-size:1.9rem;margin-bottom:6px">Confirm your booking.</h2>
-    <p class="muted" style="margin-bottom:22px">Add your details and review everything below. Your card won't be charged until the visit is completed.</p>
-    <div class="builder-step" style="margin-bottom:18px">
-      <div class="field"><span>Full name</span><input id="bk-name" type="text" placeholder="First and last name" value="${state.details.name||""}"></div>
-      <div class="field-2">
-        <div class="field"><span>Phone number</span><input id="bk-phone" type="tel" placeholder="(416) 555-0000" value="${state.details.phone||""}"></div>
-        <div class="field"><span>Email</span><input id="bk-email" type="email" placeholder="you@email.com" value="${state.details.email||""}"></div>
-      </div>
-      <div class="field"><span>Address</span><input id="bk-address" type="text" placeholder="Street, unit, city" value="${state.details.address||""}"></div>
-      <label class="consent"><input type="checkbox" id="bk-emailopt" ${state.details.emailOptIn?"checked":""}><span>Email me cleaning reminders, seasonal offers and updates.</span></label>
-      <label class="consent"><input type="checkbox" id="bk-smsopt" ${state.details.smsOptIn?"checked":""}><span>Text me appointment reminders and occasional offers by SMS. Message &amp; data rates may apply; reply STOP to unsubscribe anytime.</span></label>
-      <p class="consent-note">Optional. We only send what you opt into, and you can unsubscribe at any time. We never sell your information.</p>
-    </div>
-    ${review}
-    <div id="bkErr" class="auth-msg" style="display:none"></div>
-    <button type="button" class="btn btn-primary btn-block" data-action="confirm-booking">Confirm booking</button>`;
+    <button type="button" class="btn btn-primary btn-block" data-action="finish-request" style="margin-top:18px">Request this clean</button>`;
 }
 
 function conditionHTML(){
@@ -1450,14 +1438,13 @@ function bookingThankYou(){
   return `<div class="thankyou reveal">
     <div class="ty-check">✓</div>
     <h1>Thank you — your request is in.</h1>
-    <p class="lead">We've received your booking details${state.slotDay?` for <b>${state.slotDay}${state.slotTime?` · ${state.slotTime}`:""}</b>`:""}. A NeighbourCare coordinator will confirm your visit shortly. Your card won't be charged until the visit is completed.</p>
+    <p class="lead">We'll contact you within <b>15–20 minutes</b> to confirm your visit${state.slotDay?` for <b>${state.slotDay}${state.slotTime?` · ${state.slotTime}`:""}</b>`:""}. Your card won't be charged until the visit is completed.</p>
     <p class="muted" style="margin-top:14px">Estimated total: <b style="color:var(--ink)">${c.type.custom?"Custom quote":money(c.total)}</b> · incl. HST</p>
     <div class="ty-btns">
-      ${STRIPE_LINK ? `<a href="${STRIPE_LINK}" target="_blank" rel="noopener" class="btn btn-primary">Pay &amp; reserve online</a>` : ``}
-      <a href="tel:+12893010703" class="btn ${STRIPE_LINK?'btn-ghost':'btn-primary'}">☎ Call Now · 289-301-0703</a>
+      <a href="tel:+12893010703" class="btn btn-primary">☎ Call Now · 289-301-0703</a>
       <a href="#/" class="btn btn-ghost">Back to home</a>
     </div>
-    <p class="muted" style="margin-top:20px;font-size:.85rem">Prefer to talk it through? Call us at <a href="tel:+12893010703" style="color:var(--accent-deep);font-weight:600">289-301-0703</a>.</p>
+    <p class="muted" style="margin-top:20px;font-size:.85rem">Prefer to talk it through now? Call us at <a href="tel:+12893010703" style="color:var(--accent-deep);font-weight:600">289-301-0703</a>.</p>
   </div>`;
 }
 
@@ -1469,14 +1456,14 @@ function pageBooking(){
   <section class="wrap" style="padding-top:36px">
     <a href="#/" class="muted" style="font-size:.9rem">← Back to home</a>
     <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-top:18px">
-      <span class="eyebrow">Step ${state.bookingStep} of 3</span>
+      <span class="eyebrow">Step ${state.bookingStep} of 4</span>
     </div>
     ${bookingProgress()}
     <div class="builder">
       <div id="bookingBody">${bookingBody()}
         <div style="display:flex;justify-content:space-between;margin-top:24px">
           <button type="button" class="btn btn-ghost" data-action="bk-back" ${state.bookingStep===1?'style="visibility:hidden"':''}>← Back</button>
-          ${state.bookingStep<3?`<button type="button" class="btn btn-primary" data-action="bk-next" ${state.bookingStep===1?'data-min-gate':''}>Continue</button>`:''}
+          ${state.bookingStep<4?`<button type="button" class="btn btn-primary" data-action="bk-next" ${state.bookingStep===2?'data-min-gate':''}>Continue</button>`:''}
         </div>
       </div>
       <aside class="summary">
@@ -1545,10 +1532,15 @@ document.addEventListener("click", async (e)=>{
       if(window.fbq) fbq('track','InitiateCheckout');
       if(location.hash.replace(/^#/,"")==="/booking"){ e.preventDefault(); render(); } }
     if(a==="bk-next"){
-      if(state.bookingStep===1 && !meetsMin(compute())){ updateMinUI(true); scrollToWarn(); return; }
-      state.bookingStep=Math.min(3,state.bookingStep+1); render();
+      if(state.bookingStep===2 && !meetsMin(compute())){ updateMinUI(true); scrollToWarn(); return; }
+      state.bookingStep=Math.min(4,state.bookingStep+1); render(); try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
     }
-    if(a==="bk-back"){ if(state.bookingStep===3) captureDetails(); state.bookingStep=Math.max(1,state.bookingStep-1); render(); }
+    if(a==="bk-back"){ state.bookingStep=Math.max(1,state.bookingStep-1); render(); try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){} }
+    if(a==="finish-request"){
+      if(window.fbq) fbq('track','Schedule');
+      try{ gconv('booking',{ value:compute().total, currency:'CAD', transaction_id:'bk-'+Date.now() }); }catch(e){}
+      state.bookingStep=5; render(); try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
+    }
     if(a==="confirm-booking"){
       captureDetails();
       const d0=state.details;
