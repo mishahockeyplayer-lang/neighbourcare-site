@@ -1361,7 +1361,7 @@ function pagePolicies(){
 }
 
 /* ---------- booking flow ---------- */
-const STEP_LABELS=["Your details","Build your plan","Pick a time","Confirm"];
+const STEP_LABELS=["Build your plan","Pick a time","Confirm"];
 function bookingProgress(){
   return `<div class="progress">${STEP_LABELS.map((l,i)=>{
     const n=i+1; const cls = n<state.bookingStep?"done":(n===state.bookingStep?"cur":"");
@@ -1377,28 +1377,13 @@ const TIMES=["8:00 AM","9:00 AM","10:30 AM","12:00 PM","1:30 PM","3:00 PM"];
 
 function bookingBody(){
   if(state.bookingStep===1){
-    return `<div class="builder-step" style="margin-bottom:0">
-      <h2 style="font-size:1.9rem">Tell us about you.</h2>
-      <p class="muted" style="margin:8px 0 22px">We'll use this to confirm your booking and send your receipt. Nothing else.</p>
-      <div class="field"><span>Full name</span><input id="bk-name" type="text" placeholder="First and last name" value="${state.details.name||""}"></div>
-      <div class="field-2">
-        <div class="field"><span>Phone number</span><input id="bk-phone" type="tel" placeholder="(416) 555-0000" value="${state.details.phone||""}"></div>
-        <div class="field"><span>Email</span><input id="bk-email" type="email" placeholder="you@email.com" value="${state.details.email||""}"></div>
-      </div>
-      <div class="field"><span>Address</span><input id="bk-address" type="text" placeholder="Street, unit, city" value="${state.details.address||""}"></div>
-      <label class="consent"><input type="checkbox" id="bk-emailopt" ${state.details.emailOptIn?"checked":""}><span>Email me cleaning reminders, seasonal offers and updates.</span></label>
-      <label class="consent"><input type="checkbox" id="bk-smsopt" ${state.details.smsOptIn?"checked":""}><span>Text me appointment reminders and occasional offers by SMS. Message &amp; data rates may apply; reply STOP to unsubscribe anytime.</span></label>
-      <p class="consent-note">Optional. We only send what you opt into, and you can unsubscribe at any time. We never sell your information.</p>
-    </div>`;
-  }
-  if(state.bookingStep===2){
     return `<h2 style="font-size:1.9rem;margin-bottom:6px">Build your plan.</h2>
       <p class="muted" style="margin-bottom:14px">Pick your cleaning type and the exact rooms you need. The total updates live.</p>
       <span class="home-min-note" style="margin-bottom:18px">◆ <b>Minimum order value: $150</b> — including a mandatory $50 service fee.</span>
       ${builderHTML()}
       ${conditionHTML()}`;
   }
-  if(state.bookingStep===3){
+  if(state.bookingStep===2){
     const days=bookingDays();
     return `<h2 style="font-size:1.9rem;margin-bottom:6px">Pick a time.</h2>
       <p class="muted" style="margin-bottom:22px">Choose the day and arrival window that works for you.</p>
@@ -1409,12 +1394,23 @@ function bookingBody(){
         <div class="timegrid">${TIMES.map(t=>`<div class="slot ${state.slotTime===t?'sel':''}" data-action="time" data-id="${t}">${t}</div>`).join("")}</div>
       </div>`;
   }
-  // step 4 confirm
+  // step 3 — confirm + your details
   const c=compute();
   const roomLines=ROOMS.filter(r=>state.rooms[r.id]>0).map(r=>`${state.rooms[r.id]}× ${r.name}`).join(", ")||"None";
   const upgLines=UPGRADES.filter(u=>state.upgrades[u.id]).map(u=>u.name).join(", ")||"None";
   return `<h2 style="font-size:1.9rem;margin-bottom:6px">Confirm your booking.</h2>
-    <p class="muted" style="margin-bottom:22px">Review everything below. Your card won't be charged until the visit is completed.</p>
+    <p class="muted" style="margin-bottom:22px">Add your details and review everything below. Your card won't be charged until the visit is completed.</p>
+    <div class="builder-step" style="margin-bottom:18px">
+      <div class="field"><span>Full name</span><input id="bk-name" type="text" placeholder="First and last name" value="${state.details.name||""}"></div>
+      <div class="field-2">
+        <div class="field"><span>Phone number</span><input id="bk-phone" type="tel" placeholder="(416) 555-0000" value="${state.details.phone||""}"></div>
+        <div class="field"><span>Email</span><input id="bk-email" type="email" placeholder="you@email.com" value="${state.details.email||""}"></div>
+      </div>
+      <div class="field"><span>Address</span><input id="bk-address" type="text" placeholder="Street, unit, city" value="${state.details.address||""}"></div>
+      <label class="consent"><input type="checkbox" id="bk-emailopt" ${state.details.emailOptIn?"checked":""}><span>Email me cleaning reminders, seasonal offers and updates.</span></label>
+      <label class="consent"><input type="checkbox" id="bk-smsopt" ${state.details.smsOptIn?"checked":""}><span>Text me appointment reminders and occasional offers by SMS. Message &amp; data rates may apply; reply STOP to unsubscribe anytime.</span></label>
+      <p class="consent-note">Optional. We only send what you opt into, and you can unsubscribe at any time. We never sell your information.</p>
+    </div>
     <div class="builder-step">
       <div class="confirm-line"><span class="k">Cleaning type</span><span>${c.type.name}</span></div>
       <div class="confirm-line"><span class="k">House condition</span><span>${state.condition}</span></div>
@@ -1424,6 +1420,7 @@ function bookingBody(){
       <div class="confirm-line"><span class="k">Estimated time</span><span>~${c.mins} min on-site</span></div>
       <div class="confirm-line" style="border:none;font-weight:600"><span class="k" style="color:var(--ink)">Total (incl. HST)</span><span>${c.type.custom?"Custom quote":money(c.total)}</span></div>
     </div>
+    <div id="bkErr" class="auth-msg" style="display:none"></div>
     <button type="button" class="btn btn-primary btn-block" data-action="confirm-booking">Confirm booking</button>`;
 }
 
@@ -1460,14 +1457,14 @@ function pageBooking(){
   <section class="wrap" style="padding-top:36px">
     <a href="#/" class="muted" style="font-size:.9rem">← Back to home</a>
     <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-top:18px">
-      <span class="eyebrow">Step ${state.bookingStep} of 4</span>
+      <span class="eyebrow">Step ${state.bookingStep} of 3</span>
     </div>
     ${bookingProgress()}
     <div class="builder">
       <div id="bookingBody">${bookingBody()}
         <div style="display:flex;justify-content:space-between;margin-top:24px">
           <button type="button" class="btn btn-ghost" data-action="bk-back" ${state.bookingStep===1?'style="visibility:hidden"':''}>← Back</button>
-          ${state.bookingStep<4?`<button type="button" class="btn btn-primary" data-action="bk-next" ${state.bookingStep===2?'data-min-gate':''}>Continue</button>`:''}
+          ${state.bookingStep<3?`<button type="button" class="btn btn-primary" data-action="bk-next" ${state.bookingStep===1?'data-min-gate':''}>Continue</button>`:''}
         </div>
       </div>
       <aside class="summary">
@@ -1536,12 +1533,17 @@ document.addEventListener("click", async (e)=>{
       if(window.fbq) fbq('track','InitiateCheckout');
       if(location.hash.replace(/^#/,"")==="/booking"){ e.preventDefault(); render(); } }
     if(a==="bk-next"){
-      if(state.bookingStep===1) captureDetails();
-      if(state.bookingStep===2 && !meetsMin(compute())){ updateMinUI(true); scrollToWarn(); return; }
-      state.bookingStep=Math.min(4,state.bookingStep+1); render();
+      if(state.bookingStep===1 && !meetsMin(compute())){ updateMinUI(true); scrollToWarn(); return; }
+      state.bookingStep=Math.min(3,state.bookingStep+1); render();
     }
-    if(a==="bk-back"){ state.bookingStep=Math.max(1,state.bookingStep-1); render(); }
+    if(a==="bk-back"){ if(state.bookingStep===3) captureDetails(); state.bookingStep=Math.max(1,state.bookingStep-1); render(); }
     if(a==="confirm-booking"){
+      captureDetails();
+      const d0=state.details;
+      if(!d0.name.trim() || !d0.email.trim()){
+        showFeedback("bkErr","Please add your name and email so we can confirm your booking.","error");
+        return;
+      }
       t.disabled=true; t.textContent="Sending…";
       const c=compute(), d=state.details;
       const rooms=ROOMS.filter(r=>state.rooms[r.id]>0).map(r=>`${state.rooms[r.id]}x ${r.name}`).join(", ")||"None";
