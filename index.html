@@ -631,6 +631,14 @@ const STRIPE_LINK = "";   // e.g. "https://buy.stripe.com/xxxxxxxx"
    trigger "Inbound Webhook" → copy URL → Publish. */
 const GHL_WEBHOOK = "";   // e.g. "https://services.leadconnectorhq.com/hooks/xxxx/webhook-trigger/xxxx"
 
+/* --- GoHighLevel embedded FORM (no webhook needed) -----------------------
+   Simplest free way to feed your CRM without any webhook/automation:
+   build a Form in GHL, copy its URL, and paste it below. The form then
+   shows on the Contact page and creates a GHL contact on every submit.
+   Get it: GHL sub-account → Sites → Forms → build form → Integrate/Share
+   → copy the form's URL (looks like .../widget/form/XXXXXXXX). */
+const GHL_FORM_URL = "https://api.leadconnectorhq.com/widget/form/eDxnzUWEdVGqZl5Zdt8Y";   // e.g. "https://api.leadconnectorhq.com/widget/form/XXXXXXXX"
+
 const FORMS_READY = FORMS_KEY && !FORMS_KEY.startsWith("YOUR_");
 const AUTH_READY  = AUTH.url && AUTH.anon && !AUTH.url.startsWith("YOUR_");
 
@@ -1189,7 +1197,10 @@ function pageContact(){
         <div class="contact-box"><div class="k">Service area</div><div class="v">North York &amp; the GTA</div></div>
         <div style="margin-top:18px"><span class="eyebrow">Ready to book?</span><div style="margin-top:12px"><a href="#/booking" class="btn btn-primary">Build your plan</a></div></div>
       </div>
-      <div class="auth-card reveal">
+      ${GHL_FORM_URL ? `<div class="auth-card reveal" style="padding:12px">
+        <iframe src="${GHL_FORM_URL}" title="Request your clean" loading="lazy"
+          style="width:100%;min-height:720px;border:none;border-radius:12px;background:#fff;display:block"></iframe>
+      </div>` : `<div class="auth-card reveal">
         <span class="eyebrow">Send a note</span>
         <p class="muted" style="margin:8px 0 20px">We typically reply within an hour during business hours.</p>
         <div class="field"><span>Name</span><input id="cName" type="text" placeholder="Your name"></div>
@@ -1197,11 +1208,10 @@ function pageContact(){
         <div class="field"><span>Message</span><textarea id="cMsg" rows="5" placeholder="How can we help?"></textarea></div>
         <button type="button" class="btn btn-primary btn-block" data-action="contact-submit">Send message</button>
         <div id="contactMsg" class="auth-msg" style="display:none"></div>
-      </div>
+      </div>`}
     </div>
   </section>`;
 }
-
 function pagePortal(){
   return `
   <section class="wrap page-head reveal">
