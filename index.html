@@ -1394,10 +1394,29 @@ function bookingBody(){
         <div class="timegrid">${TIMES.map(t=>`<div class="slot ${state.slotTime===t?'sel':''}" data-action="time" data-id="${t}">${t}</div>`).join("")}</div>
       </div>`;
   }
-  // step 3 — confirm + your details
+  // step 3 — confirm (review) + GHL form for contact capture
   const c=compute();
   const roomLines=ROOMS.filter(r=>state.rooms[r.id]>0).map(r=>`${state.rooms[r.id]}× ${r.name}`).join(", ")||"None";
   const upgLines=UPGRADES.filter(u=>state.upgrades[u.id]).map(u=>u.name).join(", ")||"None";
+  const review = `<div class="builder-step">
+      <div class="confirm-line"><span class="k">Cleaning type</span><span>${c.type.name}</span></div>
+      <div class="confirm-line"><span class="k">House condition</span><span>${state.condition}</span></div>
+      <div class="confirm-line"><span class="k">Date & time</span><span>${state.slotDay||"—"} · ${state.slotTime||"—"}</span></div>
+      <div class="confirm-line"><span class="k">Rooms</span><span style="max-width:60%;text-align:right">${roomLines}</span></div>
+      <div class="confirm-line"><span class="k">Upgrades</span><span style="max-width:60%;text-align:right">${upgLines}</span></div>
+      <div class="confirm-line"><span class="k">Estimated time</span><span>~${c.mins} min on-site</span></div>
+      <div class="confirm-line" style="border:none;font-weight:600"><span class="k" style="color:var(--ink)">Total (incl. HST)</span><span>${c.type.custom?"Custom quote":money(c.total)}</span></div>
+    </div>`;
+  if(GHL_FORM_URL){
+    return `<h2 style="font-size:1.9rem;margin-bottom:6px">Confirm your booking.</h2>
+    <p class="muted" style="margin-bottom:22px">Review your plan below, then add your details to confirm. Your card won't be charged until the visit is completed.</p>
+    ${review}
+    <div class="builder-step" style="padding:12px;margin-top:18px">
+      <iframe src="${GHL_FORM_URL}" title="Confirm your booking" loading="lazy"
+        style="width:100%;min-height:720px;border:none;border-radius:12px;background:#fff;display:block"></iframe>
+    </div>`;
+  }
+  // fallback (no GHL form set): collect details here and email the booking
   return `<h2 style="font-size:1.9rem;margin-bottom:6px">Confirm your booking.</h2>
     <p class="muted" style="margin-bottom:22px">Add your details and review everything below. Your card won't be charged until the visit is completed.</p>
     <div class="builder-step" style="margin-bottom:18px">
@@ -1411,15 +1430,7 @@ function bookingBody(){
       <label class="consent"><input type="checkbox" id="bk-smsopt" ${state.details.smsOptIn?"checked":""}><span>Text me appointment reminders and occasional offers by SMS. Message &amp; data rates may apply; reply STOP to unsubscribe anytime.</span></label>
       <p class="consent-note">Optional. We only send what you opt into, and you can unsubscribe at any time. We never sell your information.</p>
     </div>
-    <div class="builder-step">
-      <div class="confirm-line"><span class="k">Cleaning type</span><span>${c.type.name}</span></div>
-      <div class="confirm-line"><span class="k">House condition</span><span>${state.condition}</span></div>
-      <div class="confirm-line"><span class="k">Date & time</span><span>${state.slotDay||"—"} · ${state.slotTime||"—"}</span></div>
-      <div class="confirm-line"><span class="k">Rooms</span><span style="max-width:60%;text-align:right">${roomLines}</span></div>
-      <div class="confirm-line"><span class="k">Upgrades</span><span style="max-width:60%;text-align:right">${upgLines}</span></div>
-      <div class="confirm-line"><span class="k">Estimated time</span><span>~${c.mins} min on-site</span></div>
-      <div class="confirm-line" style="border:none;font-weight:600"><span class="k" style="color:var(--ink)">Total (incl. HST)</span><span>${c.type.custom?"Custom quote":money(c.total)}</span></div>
-    </div>
+    ${review}
     <div id="bkErr" class="auth-msg" style="display:none"></div>
     <button type="button" class="btn btn-primary btn-block" data-action="confirm-booking">Confirm booking</button>`;
 }
