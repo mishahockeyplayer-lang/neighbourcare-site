@@ -1407,14 +1407,15 @@ function bookingBody(){
       <div class="confirm-line"><span class="k">Estimated time</span><span>~${c.mins} min on-site</span></div>
       <div class="confirm-line" style="border:none;font-weight:600"><span class="k" style="color:var(--ink)">Total (incl. HST)</span><span>${c.type.custom?"Custom quote":money(c.total)}</span></div>
     </div>`;
-  if(GHL_FORM_URL){
+  if(GHL_FORM_URL || true){
     return `<h2 style="font-size:1.9rem;margin-bottom:6px">Confirm your booking.</h2>
-    <p class="muted" style="margin-bottom:22px">Review your plan below, then add your details to confirm. Your card won't be charged until the visit is completed.</p>
+    <p class="muted" style="margin-bottom:22px">Here's your estimate. Your card won't be charged until the visit is completed.</p>
     ${review}
-    <div class="builder-step" style="padding:12px;margin-top:18px">
-      <iframe src="${GHL_FORM_URL}" title="Confirm your booking" loading="lazy"
-        style="width:100%;min-height:720px;border:none;border-radius:12px;background:#fff;display:block"></iframe>
-    </div>`;
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
+      <a href="#/contact" class="btn btn-primary" style="flex:1;justify-content:center;min-width:200px">Request this clean →</a>
+      <a href="tel:+12893010703" class="btn btn-ghost" style="flex:1;justify-content:center;min-width:200px">☎ Call 289-301-0703</a>
+    </div>
+    <p class="muted" style="margin-top:14px;font-size:.86rem">Tap "Request this clean" to send your details and we'll confirm your visit.</p>`;
   }
   // fallback (no GHL form set): collect details here and email the booking
   return `<h2 style="font-size:1.9rem;margin-bottom:6px">Confirm your booking.</h2>
